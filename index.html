@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WriteBetter — AI 英语写作润色</title>
+    <meta name="description" content="AI驱动的英语写作润色工具，语法纠错、风格优化、学术写作一键搞定">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+SC:wght@300;400;500;700&family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #06060a;
+            --glass: rgba(255,255,255,0.035);
+            --glass-2: rgba(255,255,255,0.055);
+            --glass-border: rgba(255,255,255,0.08);
+            --border: rgba(255,255,255,0.06);
+
+            --blue: #3b82f6;
+            --blue-light: #60a5fa;
+            --blue-glow: rgba(59,130,246,0.1);
+            --cyan: #22d3ee;
+            --cyan-glow: rgba(34,211,238,0.08);
+            --emerald: #34d399;
+            --emerald-glow: rgba(52,211,153,0.08);
+            --amber: #fbbf24;
+            --amber-glow: rgba(251,191,36,0.08);
+            --rose: #fb7185;
+            --rose-glow: rgba(251,113,133,0.08);
+            --violet: #a78bfa;
+            --violet-glow: rgba(167,139,250,0.08);
+
+            --text: #e8e4dc;
+            --text-2: rgba(232,228,220,0.55);
+            --text-3: rgba(232,228,220,0.3);
+            --text-4: rgba(232,228,220,0.15);
+            --success: #34d399;
+            --danger: #fb7185;
+        }
+
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'DM Sans', 'Noto Sans SC', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body::after {
+            content: '';
+            position: fixed; inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.015;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* ── AMBIENT ── */
+        .amb { position: fixed; border-radius: 50%; filter: blur(150px); pointer-events: none; z-index: 0; }
+        .amb-1 { width: 700px; height: 700px; background: rgba(59,130,246,0.06); top: -300px; left: -200px; }
+        .amb-2 { width: 500px; height: 500px; background: rgba(34,211,238,0.04); top: 40%; right: -250px; }
+        .amb-3 { width: 400px; height: 400px; background: rgba(167,139,250,0.03); bottom: -150px; left: 25%; }
+
+        /* ── NAV ── */
+        .nav {
+            position: fixed; top: 0; left: 0; right: 0;
+            z-index: 1000;
+            padding: 0 clamp(16px, 4vw, 48px);
+            height: 64px;
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(6,6,10,0.65);
+            backdrop-filter: blur(24px) saturate(1.4);
+            -webkit-backdrop-filter: blur(24px) saturate(1.4);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-logo {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800; font-size: 19px;
+            letter-spacing: -0.03em;
+            color: var(--text);
+            text-decoration: none;
+        }
+        .nav-logo em { font-style: normal; color: var(--blue); }
+        .nav-right { display: flex; align-items: center; gap: 8px; }
+        .nav-pill {
+            font-size: 13px; font-weight: 500;
+            color: var(--text-2);
+            text-decoration: none;
+            padding: 7px 16px; border-radius: 100px;
+            transition: all 0.2s;
+        }
+        .nav-pill:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+        .nav-cta {
+            padding: 8px 22px;
+            background: var(--text); color: var(--bg);
+            border: none; border-radius: 100px;
+            font-size: 13px; font-weight: 700;
+            font-family: 'Syne', sans-serif;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .nav-cta:hover { background: var(--blue-light); }
+
+        /* ── HERO ── */
+        .hero {
+            min-height: 100vh;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            text-align: center;
+            padding: 120px clamp(16px, 5vw, 80px) 60px;
+            position: relative; z-index: 1;
+        }
+        .hero-eyebrow {
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: 6px 16px 6px 12px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 100px;
+            font-size: 12px; font-weight: 500;
+            color: var(--text-2);
+            margin-bottom: 36px;
+            animation: fadeDown .8s ease forwards;
+        }
+        .hero-eyebrow .dot {
+            width: 7px; height: 7px;
+            background: var(--success);
+            border-radius: 50%;
+            position: relative;
+        }
+        .hero-eyebrow .dot::after {
+            content: '';
+            position: absolute; inset: -3px;
+            border-radius: 50%;
+            border: 1px solid var(--success);
+            animation: ping 2s ease infinite;
+        }
+        .hero h1 {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(42px, 7.5vw, 88px);
+            line-height: 0.95;
+            letter-spacing: -0.045em;
+            margin-bottom: 28px;
+            animation: fadeUp 1s ease .15s forwards;
+            opacity: 0;
+        }
+        .hero h1 .blue { color: var(--blue); }
+        .hero h1 .cyan { color: var(--cyan); }
+        .hero h1 .serif {
+            font-family: 'Source Serif 4', serif;
+            font-weight: 300; font-style: italic;
+            color: var(--text-2);
+            font-size: 0.55em;
+            letter-spacing: 0;
+        }
+        .hero-desc {
+            font-size: clamp(15px, 1.5vw, 17px);
+            color: var(--text-2);
+            max-width: 480px; line-height: 1.8;
+            margin-bottom: 40px;
+            animation: fadeUp 1s ease .3s forwards;
+            opacity: 0;
+        }
+        .hero-actions {
+            display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+            animation: fadeUp 1s ease .45s forwards;
+            opacity: 0;
+        }
+        .btn-hero {
+            padding: 15px 32px;
+            border-radius: 100px;
+            font-size: 15px; font-weight: 700;
+            font-family: 'Syne', sans-serif;
+            cursor: pointer; transition: all .3s;
+            border: none; letter-spacing: .01em;
+        }
+        .btn-hero.primary {
+            background: linear-gradient(135deg, var(--blue), var(--blue-light));
+            color: #fff;
+            box-shadow: 0 4px 32px rgba(59,130,246,0.25);
+        }
+        .btn-hero.primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 48px rgba(59,130,246,0.4);
+        }
+        .btn-hero.ghost {
+            background: var(--glass);
+            color: var(--text-2);
+            border: 1px solid var(--glass-border);
+        }
+        .btn-hero.ghost:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+
+        /* Hero 统计 */
+        .hero-metrics {
+            display: flex; gap: 48px; margin-top: 56px;
+            animation: fadeUp 1s ease .6s forwards;
+            opacity: 0;
+        }
+        .metric { text-align: center; }
+        .metric-val {
+            font-family: 'Syne', sans-serif;
+            font-size: 28px; font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+        .mv-1 { color: var(--blue); }
+        .mv-2 { color: var(--cyan); }
+        .mv-3 { color: var(--emerald); }
+        .metric-label {
+            font-size: 11px; font-weight: 500;
+            color: var(--text-3);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        /* ── MARQUEE ── */
+        .marquee {
+            padding: 28px 0;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            overflow: hidden;
+            position: relative; z-index: 1;
+        }
+        .marquee-track {
+            display: flex; gap: 40px;
+            animation: scroll 25s linear infinite;
+            width: max-content;
+        }
+        .marquee-item {
+            font-family: 'Syne', sans-serif;
+            font-size: 13px; font-weight: 600;
+            color: var(--text-4);
+            white-space: nowrap;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .marquee-item .sep {
+            width: 4px; height: 4px;
+            background: var(--text-4);
+            border-radius: 50%;
+        }
+
+        /* ── FEATURES ── */
+        .features {
+            padding: clamp(80px, 10vw, 140px) clamp(16px, 5vw, 80px);
+            max-width: 1200px; margin: 0 auto;
+            position: relative; z-index: 1;
+        }
+        .sec-eyebrow {
+            font-family: 'Space Mono', monospace;
+            font-size: 11px; font-weight: 700;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+        .se-blue { color: var(--blue); }
+        .sec-heading {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(28px, 4vw, 52px);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 64px;
+            max-width: 580px;
+        }
+        .feat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        .feat-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px 26px;
+            backdrop-filter: blur(16px);
+            transition: all .5s cubic-bezier(.25,.46,.45,.94);
+            position: relative; overflow: hidden;
+            opacity: 0; transform: translateY(40px);
+        }
+        .feat-card.vis { opacity: 1; transform: translateY(0); }
+        .feat-card::after {
+            content: ''; position: absolute; inset: 0;
+            border-radius: 20px; opacity: 0; transition: opacity .4s;
+        }
+        .feat-card:hover { transform: translateY(-8px) !important; }
+        .feat-card:hover::after { opacity: 1; }
+        .feat-card:nth-child(1)::after { background: linear-gradient(135deg, var(--blue-glow), transparent 60%); }
+        .feat-card:nth-child(2)::after { background: linear-gradient(135deg, var(--cyan-glow), transparent 60%); }
+        .feat-card:nth-child(3)::after { background: linear-gradient(135deg, var(--emerald-glow), transparent 60%); }
+        .feat-card:nth-child(4)::after { background: linear-gradient(135deg, var(--amber-glow), transparent 60%); }
+        .feat-card:nth-child(5)::after { background: linear-gradient(135deg, var(--violet-glow), transparent 60%); }
+        .feat-card:nth-child(6)::after { background: linear-gradient(135deg, var(--rose-glow), transparent 60%); }
+        .feat-inner { position: relative; z-index: 1; }
+        .feat-ic {
+            width: 48px; height: 48px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 18px; font-size: 22px;
+        }
+        .fi-1 { background: var(--blue-glow); border: 1px solid rgba(59,130,246,0.15); }
+        .fi-2 { background: var(--cyan-glow); border: 1px solid rgba(34,211,238,0.15); }
+        .fi-3 { background: var(--emerald-glow); border: 1px solid rgba(52,211,153,0.15); }
+        .fi-4 { background: var(--amber-glow); border: 1px solid rgba(251,191,36,0.15); }
+        .fi-5 { background: var(--violet-glow); border: 1px solid rgba(167,139,250,0.15); }
+        .fi-6 { background: var(--rose-glow); border: 1px solid rgba(251,113,133,0.15); }
+        .feat-card h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 16px; font-weight: 700;
+            margin-bottom: 8px; letter-spacing: -0.01em;
+        }
+        .feat-card p { font-size: 13px; color: var(--text-2); line-height: 1.7; }
+
+        /* ══════════════════════════════════════
+           APP — 核心编辑器
+           ══════════════════════════════════════ */
+        .app-section {
+            padding: clamp(60px, 8vw, 120px) clamp(16px, 4vw, 48px) clamp(80px, 10vw, 140px);
+            max-width: 960px; margin: 0 auto;
+            position: relative; z-index: 1;
+        }
+        .app-header { text-align: center; margin-bottom: 40px; }
+        .app-header h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(28px, 4vw, 48px);
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            margin-bottom: 8px;
+        }
+        .app-header p { color: var(--text-2); font-size: 15px; }
+
+        /* 模式选择 */
+        .mode-bar {
+            display: flex; gap: 6px; flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 28px;
+        }
+        .mode-btn {
+            padding: 10px 18px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 100px;
+            font-size: 13px; font-weight: 500;
+            color: var(--text-2);
+            cursor: pointer; transition: all .25s;
+            font-family: inherit;
+        }
+        .mode-btn:hover { border-color: rgba(255,255,255,0.15); color: var(--text); }
+        .mode-btn.on {
+            background: var(--blue-glow);
+            border-color: var(--blue);
+            color: var(--blue);
+            font-weight: 700;
+        }
+
+        /* 语气选择 */
+        .tone-bar {
+            display: flex; gap: 6px; flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 28px;
+        }
+        .tone-label {
+            font-size: 12px; color: var(--text-3);
+            margin-right: 8px;
+            display: flex; align-items: center;
+        }
+        .tone-btn {
+            padding: 6px 14px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 12px; font-weight: 500;
+            color: var(--text-3);
+            cursor: pointer; transition: all .2s;
+            font-family: inherit;
+        }
+        .tone-btn:hover { color: var(--text-2); border-color: rgba(255,255,255,0.12); }
+        .tone-btn.on { color: var(--cyan); border-color: var(--cyan); background: var(--cyan-glow); }
+
+        /* 编辑器 */
+        .editor-wrap {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: clamp(24px, 3vw, 40px);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+
+        .editor-area {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .editor-area label {
+            display: block;
+            font-size: 12px; font-weight: 500;
+            color: var(--text-2);
+            margin-bottom: 8px;
+            letter-spacing: 0.04em;
+        }
+        .editor-textarea {
+            width: 100%;
+            min-height: 180px;
+            padding: 18px 20px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            color: var(--text);
+            font-size: 15px;
+            font-family: 'DM Sans', sans-serif;
+            line-height: 1.7;
+            resize: vertical;
+            outline: none;
+            transition: all .25s;
+        }
+        .editor-textarea:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 4px var(--blue-glow);
+        }
+        .editor-textarea::placeholder { color: var(--text-3); }
+
+        .char-count {
+            position: absolute;
+            bottom: 14px; right: 16px;
+            font-size: 11px; color: var(--text-3);
+            font-family: 'Space Mono', monospace;
+        }
+        .char-count.warn { color: var(--amber); }
+        .char-count.over { color: var(--danger); }
+
+        .gen-row {
+            display: flex; align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap; gap: 12px;
+        }
+        .price { display: flex; align-items: baseline; gap: 3px; }
+        .price .c { font-size: 14px; color: var(--text-2); }
+        .price .a { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; color: var(--blue); }
+        .price .u { font-size: 12px; color: var(--text-3); }
+        .trial { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+        .trial b { color: var(--blue); }
+
+        .btn-improve {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, var(--blue), var(--blue-light));
+            color: #fff; border: none;
+            border-radius: 100px;
+            font-size: 15px; font-weight: 800;
+            font-family: 'Syne', sans-serif;
+            cursor: pointer; transition: all .35s;
+            display: inline-flex; align-items: center; gap: 10px;
+            box-shadow: 0 4px 32px rgba(59,130,246,0.25);
+            letter-spacing: .01em;
+        }
+        .btn-improve:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 48px rgba(59,130,246,0.4);
+        }
+        .btn-improve:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-improve .sp {
+            display: none; width: 16px; height: 16px;
+            border: 2px solid transparent; border-top: 2px solid #fff;
+            border-radius: 50%; animation: spin .8s linear infinite;
+        }
+        .btn-improve.ld .sp { display: inline-block; }
+        .btn-improve.ld .bt { display: none; }
+        .btn-improve .lt { display: none; }
+        .btn-improve.ld .lt { display: inline; }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed; top: 80px; left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: var(--glass);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 12px 24px; border-radius: 100px;
+            font-size: 13px; font-weight: 500;
+            z-index: 9998; opacity: 0;
+            transition: all .3s; pointer-events: none;
+            white-space: nowrap;
+            backdrop-filter: blur(20px);
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast.ok { border-color: var(--success); color: var(--success); }
+
+        /* ── RESULT ── */
+        .result-area { margin-top: 36px; display: none; }
+        .result-area.show { display: block; }
+
+        /* 评分卡 */
+        .score-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 28px;
+            backdrop-filter: blur(20px);
+            margin-bottom: 24px;
+        }
+        .score-header {
+            display: flex; align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .score-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 16px; font-weight: 700;
+        }
+        .score-overall {
+            font-family: 'Syne', sans-serif;
+            font-size: 36px; font-weight: 800;
+        }
+        .so-high { color: var(--emerald); }
+        .so-mid { color: var(--amber); }
+        .so-low { color: var(--rose); }
+
+        .score-bars {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+        }
+        .score-bar-item { }
+        .score-bar-label {
+            display: flex; justify-content: space-between;
+            font-size: 12px; margin-bottom: 6px;
+        }
+        .score-bar-label span:first-child { color: var(--text-2); font-weight: 500; }
+        .score-bar-label span:last-child {
+            font-family: 'Space Mono', monospace;
+            font-weight: 700; font-size: 11px;
+        }
+        .score-bar-track {
+            height: 6px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 1s cubic-bezier(.25,.46,.45,.94);
+            width: 0;
+        }
+        .sbf-blue { background: linear-gradient(90deg, var(--blue), var(--blue-light)); }
+        .sbf-cyan { background: linear-gradient(90deg, var(--cyan), #67e8f9); }
+        .sbf-emerald { background: linear-gradient(90deg, var(--emerald), #6ee7b7); }
+        .sbf-amber { background: linear-gradient(90deg, var(--amber), #fcd34d); }
+
+        .score-summary {
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--text-2);
+            line-height: 1.7;
+        }
+
+        /* 对比区域 */
+        .compare-section {
+            margin-bottom: 24px;
+        }
+        .compare-header {
+            display: flex; align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px; flex-wrap: wrap; gap: 8px;
+        }
+        .compare-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 16px; font-weight: 700;
+        }
+        .compare-btns { display: flex; gap: 8px; }
+        .btn-s {
+            padding: 7px 14px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 100px;
+            color: var(--text-2);
+            font-size: 12px; font-weight: 500;
+            font-family: inherit; cursor: pointer;
+            transition: all .2s;
+        }
+        .btn-s:hover { border-color: var(--blue); color: var(--blue); }
+        .btn-s.cp { border-color: var(--success); color: var(--success); }
+
+        .compare-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .compare-pane {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            padding: 24px;
+            backdrop-filter: blur(16px);
+            position: relative;
+        }
+        .compare-pane::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; bottom: 0; width: 3px;
+            border-radius: 3px 0 0 3px;
+        }
+        .pane-original::before {
+            background: linear-gradient(180deg, var(--rose), transparent);
+        }
+        .pane-improved::before {
+            background: linear-gradient(180deg, var(--emerald), transparent);
+        }
+        .pane-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px; font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+        }
+        .pl-original { color: var(--rose); }
+        .pl-improved { color: var(--emerald); }
+        .pane-text {
+            font-size: 14px;
+            line-height: 1.85;
+            color: var(--text);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .pane-original .pane-text { color: var(--text-2); }
+
+        /* 改动列表 */
+        .changes-section {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 28px;
+            backdrop-filter: blur(16px);
+        }
+        .changes-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 16px; font-weight: 700;
+            margin-bottom: 20px;
+        }
+        .change-item {
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        .change-item:last-child { border-bottom: none; }
+        .change-row {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 12px;
+            align-items: start;
+            margin-bottom: 8px;
+        }
+        .change-from {
+            font-size: 13px;
+            color: var(--rose);
+            text-decoration: line-through;
+            opacity: 0.7;
+            line-height: 1.6;
+        }
+        .change-arrow {
+            color: var(--text-3);
+            font-size: 14px;
+            padding-top: 2px;
+        }
+        .change-to {
+            font-size: 13px;
+            color: var(--emerald);
+            line-height: 1.6;
+        }
+        .change-reason {
+            font-size: 12px;
+            color: var(--text-3);
+            padding-left: 0;
+            line-height: 1.5;
+        }
+
+        /* ── PAYMENT MODAL ── */
+        .modal-bg {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(16px);
+            z-index: 2000; display: none;
+            align-items: center; justify-content: center;
+        }
+        .modal-bg.show { display: flex; }
+        .modal-box {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            padding: 36px 28px;
+            max-width: 400px; width: 90%;
+            text-align: center;
+            animation: scaleUp .35s ease;
+            backdrop-filter: blur(32px);
+            position: relative; overflow: hidden;
+        }
+        .modal-box::before {
+            content: ''; position: absolute;
+            top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--blue), var(--cyan), var(--violet));
+        }
+        .modal-ic {
+            width: 52px; height: 52px;
+            border-radius: 50%;
+            background: var(--blue-glow);
+            border: 2px solid rgba(59,130,246,0.25);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; margin: 0 auto 18px;
+        }
+        .modal-box h3 { font-family: 'Syne', sans-serif; font-size: 19px; font-weight: 800; margin-bottom: 6px; }
+        .modal-box > p { font-size: 13px; color: var(--text-2); margin-bottom: 18px; }
+        .qr-box {
+            width: 190px; height: 190px;
+            margin: 0 auto 14px;
+            border-radius: 16px; overflow: hidden;
+            border: 2px solid var(--glass-border);
+            background: rgba(255,255,255,0.02);
+        }
+        .qr-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .qr-err { width: 100%; height: 100%; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+        .qr-err .qe { font-size: 32px; opacity: .4; }
+        .qr-err span { font-size: 11px; color: var(--text-3); }
+        .modal-price { font-family: 'Syne', sans-serif; font-size: 30px; font-weight: 800; color: var(--blue); margin-bottom: 14px; }
+        .modal-price .y { font-size: 14px; }
+        .pay-note {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px 16px; margin-bottom: 18px;
+        }
+        .pay-note p { font-size: 13px; color: var(--text-2); margin-bottom: 3px; }
+        .pay-note .oid { color: var(--blue); font-family: 'Space Mono', monospace; font-weight: 700; letter-spacing: .06em; }
+        .pay-note .ptip { font-size: 11px; color: var(--text-3); }
+        .pay-st { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 14px; font-size: 13px; color: var(--text-2); min-height: 20px; }
+        .pay-st.ck { color: var(--blue); }
+        .pay-st .cs { width: 14px; height: 14px; border: 2px solid transparent; border-top: 2px solid var(--blue); border-radius: 50%; animation: spin .8s linear infinite; display: none; }
+        .pay-st.ck .cs { display: inline-block; }
+        .btn-pay {
+            width: 100%; padding: 13px;
+            background: #07C160; color: #fff;
+            border: none; border-radius: 14px;
+            font-size: 15px; font-weight: 700;
+            font-family: inherit; cursor: pointer;
+            transition: all .2s; margin-bottom: 10px;
+        }
+        .btn-pay:hover { background: #06ae56; }
+        .btn-pay:disabled { opacity: .5; cursor: not-allowed; }
+        .btn-cancel {
+            width: 100%; padding: 11px;
+            background: transparent; color: var(--text-2);
+            border: 1px solid var(--border); border-radius: 14px;
+            font-size: 13px; font-family: inherit; cursor: pointer;
+            transition: all .2s;
+        }
+        .btn-cancel:hover { border-color: rgba(255,255,255,0.15); color: var(--text); }
+
+        /* ── FOOTER ── */
+        footer {
+            padding: 48px clamp(16px, 4vw, 48px);
+            text-align: center;
+            border-top: 1px solid var(--border);
+            position: relative; z-index: 1;
+        }
+        footer p { font-size: 11px; color: var(--text-3); letter-spacing: .08em; }
+
+        /* ── ANIMATIONS ── */
+        @keyframes fadeUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes fadeDown { from { opacity:0; transform:translateY(-16px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes scaleUp { from { opacity:0; transform:scale(.94); } to { opacity:1; transform:scale(1); } }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        @keyframes ping { 0% { transform:scale(1); opacity:1; } 100% { transform:scale(2.5); opacity:0; } }
+        @keyframes scroll { 0% { transform:translateX(0); } 100% { transform:translateX(-50%); } }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .nav { height: 56px; padding: 0 14px; }
+            .nav-pill { display: none; }
+            .hero { padding: 100px 16px 50px; }
+            .hero-metrics { gap: 24px; }
+            .metric-val { font-size: 22px; }
+            .feat-grid { grid-template-columns: 1fr; }
+            .mode-bar { gap: 4px; }
+            .mode-btn { padding: 8px 12px; font-size: 12px; }
+            .editor-wrap { padding: 20px; }
+            .gen-row { flex-direction: column; gap: 14px; }
+            .compare-grid { grid-template-columns: 1fr; }
+            .score-bars { grid-template-columns: 1fr; }
+            .change-row { grid-template-columns: 1fr; gap: 6px; }
+            .change-arrow { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="amb amb-1"></div>
+<div class="amb amb-2"></div>
+<div class="amb amb-3"></div>
+
+<div class="toast" id="toast"></div>
+
+<!-- NAV -->
+<nav class="nav">
+    <a class="nav-logo" href="#">Write<em>Better</em></a>
+    <div class="nav-right">
+        <a href="#features" class="nav-pill">功能</a>
+        <a href="#app" class="nav-pill">润色器</a>
+        <button class="nav-cta" onclick="document.getElementById('app').scrollIntoView({behavior:'smooth'})">免费试用</button>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-eyebrow">
+        <span class="dot"></span>
+        AI 驱动 · 已润色 50,000+ 篇文章
+    </div>
+    <h1>
+        <span class="serif">Your English</span><br>
+        <span class="blue">Polished</span><br>
+        <span class="cyan">Perfectly</span>
+    </h1>
+    <p class="hero-desc">
+        粘贴你的英文文本，AI 在 30 秒内帮你纠错、润色、提升写作水平。支持语法检查、学术写作、商务邮件等 6 种模式。
+    </p>
+    <div class="hero-actions">
+        <button class="btn-hero primary" onclick="document.getElementById('app').scrollIntoView({behavior:'smooth'})">开始润色</button>
+        <button class="btn-hero ghost" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">了解更多</button>
+    </div>
+    <div class="hero-metrics">
+        <div class="metric">
+            <div class="metric-val mv-1">30s</div>
+            <div class="metric-label">处理速度</div>
+        </div>
+        <div class="metric">
+            <div class="metric-val mv-2">6</div>
+            <div class="metric-label">写作模式</div>
+        </div>
+        <div class="metric">
+            <div class="metric-val mv-3">5000</div>
+            <div class="metric-label">字符上限</div>
+        </div>
+    </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee">
+    <div class="marquee-track">
+        <span class="marquee-item">Grammar Fix<span class="sep"></span></span>
+        <span class="marquee-item">Academic Writing<span class="sep"></span></span>
+        <span class="marquee-item">Business Email<span class="sep"></span></span>
+        <span class="marquee-item">Creative Writing<span class="sep"></span></span>
+        <span class="marquee-item">Style Polish<span class="sep"></span></span>
+        <span class="marquee-item">Simplify<span class="sep"></span></span>
+        <span class="marquee-item">Grammar Fix<span class="sep"></span></span>
+        <span class="marquee-item">Academic Writing<span class="sep"></span></span>
+        <span class="marquee-item">Business Email<span class="sep"></span></span>
+        <span class="marquee-item">Creative Writing<span class="sep"></span></span>
+        <span class="marquee-item">Style Polish<span class="sep"></span></span>
+        <span class="marquee-item">Simplify<span class="sep"></span></span>
+    </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+    <div class="sec-eyebrow se-blue">Features</div>
+    <h2 class="sec-heading">不只是纠错，<br>是你的英语写作教练</h2>
+    <div class="feat-grid">
+        <div class="feat-card">
+            <div class="feat-inner">
+                <div class="feat-ic fi-1">✏️</div>
+                <h3>语法纠错</h3>
+                <p>精准识别语法错误、拼写问题、标点误用，只修错误不改原意。</p>
+            </div>
+        </div>
+        <div class="feat-card">
+            <div class="feat-inner">
+                <div class="feat-ic fi-2">✨</div>
+                <h3>润色优化</h3>
+                <p>提升句子流畅度，替换重复用词，让表达更自然专业。</p>
+            </div>
+        </div>
+        <div class="feat-card">
+            <div class="feat-inner">
+                <div class="feat-ic fi-3">🎓</div>
+                <h3>学术写作</h3>
+                <p>转换为正式学术英语，使用 hedging language 和学术惯例。</p>
+            </div>
+        </div>
+        <div class="feat-card">
+            <div class="feat-inner">
+                <div class="feat-ic fi-4">💼</div>
+                <h3>商务写作</h3>
+                <p>简洁有力的商务沟通，主动语态、强动词、清晰逻辑。</p>
+            </div>
+        </div>
+        <div class="feat-card">
+            <div class="feat-inner">
+                <div class="feat-ic fi-5">🎨</div>
+                <h3>创意写作</h3>
+                <p>更生动的描写、更丰富的句式变化、更强的节奏感和画面感。</p>
+            </div>
+        </div>
+        <div class="feat-card">
+            <div class="feat-inner">
+                <div class="feat-ic fi-6">📐</div>
+                <h3>改动对比</h3>
+                <p>逐条展示修改内容和原因，让你知道改了什么、为什么改。</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- APP -->
+<section class="app-section" id="app">
+    <div class="app-header">
+        <div class="sec-eyebrow" style="color:var(--cyan)">Polisher</div>
+        <h2>润色你的英文</h2>
+        <p>粘贴文本，选择模式，一键提升</p>
+    </div>
+
+    <!-- 模式选择 -->
+    <div class="mode-bar">
+        <button class="mode-btn" data-mode="grammar" onclick="pickMode(this)">✏️ 语法纠错</button>
+        <button class="mode-btn on" data-mode="polish" onclick="pickMode(this)">✨ 润色优化</button>
+        <button class="mode-btn" data-mode="academic" onclick="pickMode(this)">🎓 学术写作</button>
+        <button class="mode-btn" data-mode="business" onclick="pickMode(this)">💼 商务写作</button>
+        <button class="mode-btn" data-mode="creative" onclick="pickMode(this)">🎨 创意写作</button>
+        <button class="mode-btn" data-mode="simplify" onclick="pickMode(this)">📐 简化表达</button>
+    </div>
+
+    <!-- 语气选择 -->
+    <div class="tone-bar">
+        <span class="tone-label">语气：</span>
+        <button class="tone-btn on" data-tone="neutral" onclick="pickTone(this)">中性</button>
+        <button class="tone-btn" data-tone="formal" onclick="pickTone(this)">正式</button>
+        <button class="tone-btn" data-tone="casual" onclick="pickTone(this)">轻松</button>
+        <button class="tone-btn" data-tone="confident" onclick="pickTone(this)">自信</button>
+        <button class="tone-btn" data-tone="friendly" onclick="pickTone(this)">友好</button>
+    </div>
+
+    <div class="editor-wrap">
+        <div class="editor-area">
+            <label>输入英文文本</label>
+            <textarea class="editor-textarea" id="inputText"
+                placeholder="Paste your English text here...&#10;&#10;例：I think the project was went well and we should to continue with the same strategy for next quarter. The team have been working very hardly and the results was good."
+                maxlength="5000"
+                oninput="updateCharCount()"></textarea>
+            <span class="char-count" id="charCount">0 / 5000</span>
+        </div>
+        <div class="gen-row">
+            <div>
+                <div class="price">
+                    <span class="c">¥</span>
+                    <span class="a">3</span>
+                    <span class="u">/ 次</span>
+                </div>
+                <div class="trial">新用户免费 <b id="freeCount">3</b> 次</div>
+            </div>
+            <button class="btn-improve" id="improveBtn" onclick="handleImprove()">
+                <span class="sp"></span>
+                <span class="bt">开始润色</span>
+                <span class="lt">AI 润色中…</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- RESULT -->
+    <div class="result-area" id="resultArea">
+        <!-- 评分 -->
+        <div class="score-card" id="scoreCard">
+            <div class="score-header">
+                <span class="score-title">写作评分</span>
+                <span class="score-overall" id="scoreOverall">--</span>
+            </div>
+            <div class="score-bars">
+                <div class="score-bar-item">
+                    <div class="score-bar-label"><span>语法 Grammar</span><span id="sGrammar">0</span></div>
+                    <div class="score-bar-track"><div class="score-bar-fill sbf-blue" id="bGrammar"></div></div>
+                </div>
+                <div class="score-bar-item">
+                    <div class="score-bar-label"><span>清晰度 Clarity</span><span id="sClarity">0</span></div>
+                    <div class="score-bar-track"><div class="score-bar-fill sbf-cyan" id="bClarity"></div></div>
+                </div>
+                <div class="score-bar-item">
+                    <div class="score-bar-label"><span>词汇 Vocabulary</span><span id="sVocab">0</span></div>
+                    <div class="score-bar-track"><div class="score-bar-fill sbf-emerald" id="bVocab"></div></div>
+                </div>
+                <div class="score-bar-item">
+                    <div class="score-bar-label"><span>流畅度 Flow</span><span id="sFlow">0</span></div>
+                    <div class="score-bar-track"><div class="score-bar-fill sbf-amber" id="bFlow"></div></div>
+                </div>
+            </div>
+            <div class="score-summary" id="scoreSummary"></div>
+        </div>
+
+        <!-- 对比 -->
+        <div class="compare-section">
+            <div class="compare-header">
+                <span class="compare-title">原文 vs 润色后</span>
+                <div class="compare-btns">
+                    <button class="btn-s" id="cpImproved" onclick="cpResult()">📋 复制结果</button>
+                </div>
+            </div>
+            <div class="compare-grid">
+                <div class="compare-pane pane-original">
+                    <div class="pane-label pl-original">Original 原文</div>
+                    <div class="pane-text" id="paneOriginal"></div>
+                </div>
+                <div class="compare-pane pane-improved">
+                    <div class="pane-label pl-improved">Improved 润色后</div>
+                    <div class="pane-text" id="paneImproved"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 改动列表 -->
+        <div class="changes-section" id="changesSection" style="display:none;">
+            <div class="changes-title">📝 改动详情</div>
+            <div id="changesList"></div>
+        </div>
+    </div>
+</section>
+
+<!-- PAYMENT MODAL -->
+<div class="modal-bg" id="payModal" onclick="if(event.target===this)closeM()">
+    <div class="modal-box">
+        <div class="modal-ic">📱</div>
+        <h3>扫码支付</h3>
+        <p>扫描下方支付宝二维码完成付款</p>
+        <div class="qr-box">
+            <img src="1777827107878.jpg" alt="支付宝收款码"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+            <div class="qr-err">
+                <span class="qe">📱</span>
+                <span>收款码加载失败</span>
+                <span>请上传收款码图片</span>
+            </div>
+        </div>
+        <div class="modal-price"><span class="y">¥</span>3</div>
+        <div class="pay-note">
+            <p>💡 付款时请备注订单号：</p>
+            <p class="oid" id="orderId">---</p>
+            <p class="ptip">备注订单号可加快确认速度</p>
+        </div>
+        <div class="pay-st" id="paySt"><span class="cs"></span><span id="payStText"></span></div>
+        <button class="btn-pay" id="btnPay" onclick="confirmPay()">✅ 我已付款</button>
+        <button class="btn-cancel" onclick="closeM()">取消</button>
+    </div>
+</div>
+
+<footer>
+    <p>WriteBetter &copy; 2024 — AI 驱动的英语写作润色工具</p>
+</footer>
+
+<script>
+    var EP = '/api/improve';
+    var FL = 3;
+    var curMode = 'polish';
+    var curTone = 'neutral';
+    var curImproved = '';
+    var used = parseInt(localStorage.getItem('wb_t') || '0');
+
+    document.getElementById('freeCount').textContent = Math.max(0, FL - used);
+
+    function pickMode(el) {
+        document.querySelectorAll('.mode-btn').forEach(function(b) { b.classList.remove('on'); });
+        el.classList.add('on');
+        curMode = el.dataset.mode;
+    }
+
+    function pickTone(el) {
+        document.querySelectorAll('.tone-btn').forEach(function(b) { b.classList.remove('on'); });
+        el.classList.add('on');
+        curTone = el.dataset.tone;
+    }
+
+    function updateCharCount() {
+        var t = document.getElementById('inputText').value;
+        var c = document.getElementById('charCount');
+        c.textContent = t.length + ' / 5000';
+        c.className = 'char-count' + (t.length > 4500 ? (t.length > 5000 ? ' over' : ' warn') : '');
+    }
+
+    function toast(m, t) {
+        t = t || 'error';
+        var d = document.getElementById('toast');
+        d.textContent = m;
+        d.className = 'toast show ' + (t === 'ok' ? 'ok' : '');
+        setTimeout(function() { d.className = 'toast'; }, 3000);
+    }
+
+    function mkOrder() {
+        var n = new Date();
+        var ts = n.getFullYear().toString().slice(2) +
+            String(n.getMonth()+1).padStart(2,'0') +
+            String(n.getDate()).padStart(2,'0') +
+            String(n.getHours()).padStart(2,'0') +
+            String(n.getMinutes()).padStart(2,'0');
+        return 'WB' + ts + Math.random().toString(36).substring(2,6).toUpperCase();
+    }
+
+    function handleImprove() {
+        var t = document.getElementById('inputText').value.trim();
+        if (!t) {
+            document.getElementById('inputText').style.borderColor = 'var(--danger)';
+            document.getElementById('inputText').focus();
+            setTimeout(function() { document.getElementById('inputText').style.borderColor = ''; }, 2000);
+            toast('请输入英文文本');
+            return;
+        }
+        if (t.length < 10) { toast('文本太短，至少输入10个字符'); return; }
+        if (used < FL) { doImprove(); }
+        else {
+            document.getElementById('orderId').textContent = mkOrder();
+            document.getElementById('paySt').className = 'pay-st';
+            document.getElementById('payStText').textContent = '';
+            document.getElementById('btnPay').disabled = false;
+            document.getElementById('payModal').classList.add('show');
+        }
+    }
+
+    function closeM() { document.getElementById('payModal').classList.remove('show'); }
+
+    function confirmPay() {
+        document.getElementById('btnPay').disabled = true;
+        document.getElementById('paySt').className = 'pay-st ck';
+        document.getElementById('payStText').textContent = '正在验证付款…';
+        setTimeout(function() {
+            document.getElementById('paySt').className = 'pay-st';
+            document.getElementById('payStText').textContent = '';
+            closeM();
+            toast('付款确认成功', 'ok');
+            setTimeout(function() { doImprove(); }, 500);
+        }, 1500);
+    }
+
+    async function doImprove() {
+        var btn = document.getElementById('improveBtn');
+        btn.classList.add('ld'); btn.disabled = true;
+        try {
+            var r = await fetch(EP, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    text: document.getElementById('inputText').value.trim(),
+                    mode: curMode,
+                    tone: curTone
+                })
+            });
+            var d = await r.json();
+            if (!r.ok) throw new Error(d.error || '请求失败');
+            if (d.success && d.result) {
+                renderResult(d.result, document.getElementById('inputText').value.trim());
+                if (used < FL) { used++; localStorage.setItem('wb_t', used); document.getElementById('freeCount').textContent = Math.max(0, FL - used); }
+                toast('润色完成', 'ok');
+            } else { throw new Error('数据异常'); }
+        } catch(e) { toast(e.message); }
+        finally { btn.classList.remove('ld'); btn.disabled = false; }
+    }
+
+    function renderResult(res, original) {
+        curImproved = res.improved;
+
+        // Score
+        var s = res.score;
+        var overall = s.overall || 70;
+        var soEl = document.getElementById('scoreOverall');
+        soEl.textContent = overall;
+        soEl.className = 'score-overall ' + (overall >= 80 ? 'so-high' : overall >= 60 ? 'so-mid' : 'so-low');
+
+        // Score bars with animation
+        setTimeout(function() {
+            document.getElementById('sGrammar').textContent = s.grammar || 0;
+            document.getElementById('bGrammar').style.width = (s.grammar || 0) + '%';
+        }, 200);
+        setTimeout(function() {
+            document.getElementById('sClarity').textContent = s.clarity || 0;
+            document.getElementById('bClarity').style.width = (s.clarity || 0) + '%';
+        }, 350);
+        setTimeout(function() {
+            document.getElementById('sVocab').textContent = s.vocabulary || 0;
+            document.getElementById('bVocab').style.width = (s.vocabulary || 0) + '%';
+        }, 500);
+        setTimeout(function() {
+            document.getElementById('sFlow').textContent = s.flow || 0;
+            document.getElementById('bFlow').style.width = (s.flow || 0) + '%';
+        }, 650);
+
+        document.getElementById('scoreSummary').textContent = res.summary || '';
+
+        // Compare
+        document.getElementById('paneOriginal').textContent = original;
+        document.getElementById('paneImproved').textContent = res.improved;
+
+        // Changes
+        var changesDiv = document.getElementById('changesList');
+        var changesSection = document.getElementById('changesSection');
+        if (res.changes && res.changes.length > 0) {
+            var h = '';
+            res.changes.forEach(function(c) {
+                h += '<div class="change-item">' +
+                    '<div class="change-row">' +
+                    '<div class="change-from">' + escHtml(c.original) + '</div>' +
+                    '<div class="change-arrow">→</div>' +
+                    '<div class="change-to">' + escHtml(c.improved) + '</div>' +
+                    '</div>' +
+                    '<div class="change-reason">💡 ' + escHtml(c.reason) + '</div>' +
+                    '</div>';
+            });
+            changesDiv.innerHTML = h;
+            changesSection.style.display = 'block';
+        } else {
+            changesSection.style.display = 'none';
+        }
+
+        // Show result
+        document.getElementById('resultArea').classList.add('show');
+        setTimeout(function() {
+            document.getElementById('resultArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    }
+
+    function escHtml(s) {
+        if (!s) return '';
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function cpResult() {
+        if (!curImproved) return;
+        navigator.clipboard.writeText(curImproved).then(function() {
+            var b = document.getElementById('cpImproved');
+            b.classList.add('cp'); b.textContent = '✓ 已复制';
+            setTimeout(function() { b.classList.remove('cp'); b.textContent = '📋 复制结果'; }, 2000);
+        });
+    }
+
+    // Intersection Observer
+    var obs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(e) {
+            if (e.isIntersecting) { e.target.classList.add('vis'); obs.unobserve(e.target); }
+        });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.feat-card').forEach(function(c, i) {
+        c.style.transitionDelay = (i * 0.1) + 's';
+        obs.observe(c);
+    });
+</script>
+
+</body>
+</html>
